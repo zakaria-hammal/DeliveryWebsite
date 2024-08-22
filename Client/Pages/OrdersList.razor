@@ -1,0 +1,71 @@
+@page "/orders"
+@inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Http
+@attribute [Authorize]
+
+<PageTitle>List De Commandes</PageTitle>
+
+@if(Orders == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else if(Orders.Count == 0)
+{
+    <input type="checkbox" @bind="finished">@:&emsp;<label>Afficher Seulement les commandes non dévlivrés</label>
+    <p>Pas de commandes</p>
+}
+else
+{
+    <input type="checkbox" @bind="finished">@:&emsp;<label>Afficher Seulement les commandes non dévlivrés</label>
+    foreach(var order in Orders)
+    {
+        <p><strong>Client :</strong>@order.ClientLastName @order.ClientFirstName</p>
+        <p><strong>Email :</strong>@order.ClientEmail</p>
+        <p><strong>Numéro de téléphone :</strong>@order.ClientPhoneNumber</p>
+        <p><strong>Adresse :</strong>@order.ClientAddress</p>
+        <p><strong>Produit :</strong>@order.ProductName</p>
+        <p><strong>Commentaires :</strong>@order.Comments</p>
+        if(order.Completed)
+        {
+            <p><strong>Etat :</strong>Dévlivré</p>
+        }
+        else
+        {
+            <p><strong>Etat :</strong>Non Dévlivré</p>
+        }
+        if(!order.Completed)
+        {
+            <button @onclick="() => DeliveredAsync(order)">Commande reçue</button>
+        }
+
+        <hr>
+    }
+}
+
+@code {
+    private List<Order>? orders{get; set;}
+    private bool finished{get; set;}
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        orders = new();
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var response = await Http.GetAsync("api/Order/GetOrders");
+
+        if(response.IsSuccessStatusCode)
+        {
+            orders = await Http.GetFromJsonAsync<List<Order>>("api/Order/GetOrders");
+        }
+    }
+    private List<Order>? Orders => orders.Where(o => !o.Completed || !finished).ToList();
+    private async Task DeliveredAsync(Order order)
+    {
+        var response = await Http.PostAsJsonAsync("api/Order/CompleteOrder", order);
+        if(response.IsSuccessStatusCode)
+        {
+            order.Completed = true;
+        }
+    }
+}

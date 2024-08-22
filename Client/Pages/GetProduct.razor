@@ -1,0 +1,84 @@
+@page "/products/{productName}"
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>productName</PageTitle>
+
+@if(product == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else if(product.ProductName == null)
+{
+    <p>Ce produit n'éxiste pas</p>
+}
+else
+{
+    <p><strong>Nom du produit :</strong> @product.ProductName</p>
+    <p><strong>Categorie :</strong> @product.CategoryName</p>
+    <p><strong>Prix :</strong> @product.Price</p>
+    
+    if(String.IsNullOrEmpty(product.Description))
+    {
+        <p><strong>Description :</strong><br><em>Pas de Description</em>></p>
+    }
+    else
+    {
+        <p><strong>Description :</strong><br>@product.Description</p><p><strong>Description :</strong><br>@product.Description</p>
+    }
+    
+    <button class="btn btn-primary" @onclick="Nav">Faire une commande</button><br><br><br>
+
+    <img src="@imageUrl" alt="Fetched Image" style="width: 300px; height: 300px; border-radius: 50%;" /><br><br>
+}
+
+@code {
+    [Parameter]
+    public string? productName{get; set;}
+    private Product? product{get; set;}
+    private string? imageName{get; set;} = "";
+    private string? errorMessage{get; set;}
+    private string? imageUrl{get; set;}
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var response = await Http.GetAsync("api/Stock/GetProducts");
+
+        if(response.IsSuccessStatusCode)
+        {
+            var Products = await Http.GetFromJsonAsync<List<Product>>("api/Stock/GetProducts");
+
+            if(Products != null)
+                product = Products.FirstOrDefault(p => p.ProductName == productName);
+
+            try
+            {
+                imageName = product.ProductName;
+
+                var response1 = await Http.GetAsync($"api/Image/GetImage/{imageName}");
+                if (response1.IsSuccessStatusCode)
+                {
+                    imageUrl = $"http://localhost:5292/api/Image/GetImage/{imageName}";
+                }
+                else
+                {
+                    imageUrl = null;
+                    errorMessage = "Image not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error: {ex.Message}";
+            }
+        }
+    }
+    
+    private void Nav()
+    {
+        navigationManager.NavigateTo($"/order/{productName}", forceLoad: true);
+    }
+}

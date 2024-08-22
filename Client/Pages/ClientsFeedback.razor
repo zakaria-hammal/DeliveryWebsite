@@ -1,0 +1,65 @@
+@page "/feedback"
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Signaler un problem</PageTitle>
+
+@if(feedback == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <label>Votre Nom :</label><br>
+    <input type="text" placeholder="Nom" @bind="@feedback.ClientLastName" required><br><br>
+    
+    <label>Votre Prénom :</label><br>
+    <input type="text" placeholder="Prénom" @bind="@feedback.ClientFirstName" required><br><br>
+    
+    <label>Votre Email :</label><br>
+    <input type="email" placeholder="Email" @bind="@feedback.ClientEmail" required><br><br>
+    
+    <label>Votre Numéro de téléphone :</label><br>
+    <input type="text" placeholder="Num" @bind="@feedback.ClientPhoneNumber" required><br><br>
+
+    <label>Votre Problème :</label><br>
+    <textarea placeholder="Commentaires" @bind="@feedback.Problem" required></textarea><br><br>
+    @((MarkupString)message)
+
+    <button class="btn btn-primary" @onclick="@SendfeedbackAsync">Signaler</button>
+    
+}
+
+@code {
+    private Feedback? feedback{get; set;}
+    private string message{get; set;} = String.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        feedback = new();
+    }
+
+    private async Task SendfeedbackAsync()
+    {
+        if(feedback != null)
+        {
+            
+            var response = await Http.PostAsJsonAsync("api/feedback/Postfeedback", feedback);
+            if(response.IsSuccessStatusCode)
+            {
+                await JsRuntime.InvokeVoidAsync("Alert", "Votre Singnalement a été envoyé !!!");
+                navigationManager.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                message = "<p>Veuillez remplire tous les champs</p><br><br>";
+            }
+        }
+             
+    }
+}

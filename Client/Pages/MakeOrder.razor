@@ -1,0 +1,95 @@
+@page "/order"
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Commande</PageTitle>
+@if(order == null || Products == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else if(Products.Count == 0)
+{
+    <p>On n'a pas ajouté encore des produits</p>
+}
+else
+{
+    <label>Votre Nom :</label><br>
+    <input type="text" placeholder="Nom" @bind="@order.ClientLastName" required><br><br>
+    
+    <label>Votre Prénom :</label><br>
+    <input type="text" placeholder="Prénom" @bind="@order.ClientFirstName" required><br><br>
+    
+    <label>Votre Email :</label><br>
+    <input type="email" placeholder="Email" @bind="@order.ClientEmail" required><br><br>
+    
+    <label>Votre Numéro de téléphone :</label><br>
+    <input type="text" placeholder="Num" @bind="@order.ClientPhoneNumber" required><br><br>
+
+    <label>Votre Addresse :</label><br>
+    <input type="text" placeholder="Adresse" @bind="order.ClientAddress" required><br><br>
+
+    <label>Vos Commentaires (optionel) :</label><br>
+    <textarea placeholder="Commentaires" @bind="@order.Comments"></textarea>
+
+    <label>Produit à acheter :</label><br>
+    <InputSelect @bind-Value="@order.ProductName">
+        <Option value="Name">Produit</Option>
+        @foreach (var product in Products)
+        {
+            <option value="@product.ProductName">@product.ProductName</option>
+        }
+    </InputSelect><br><br>
+    @((MarkupString)message)
+    
+    <button class="btn btn-primary" @onclick="@SendOrderAsync">Faire une Commande</button>
+}
+
+@code {
+    private string message{get; set;} = String.Empty;
+    private Order? order{get; set;} = new();
+    private List<Product>? Products{get; set;}
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var response = await Http.GetAsync("api/Stock/GetProducts");
+
+        if(response.IsSuccessStatusCode)
+        {
+            Products = await Http.GetFromJsonAsync<List<Product>>("api/Stock/GetProducts");
+        }
+    }
+
+
+    private async Task SendOrderAsync()
+    {
+        if(Products != null)
+        {
+            if(order != null)
+            {
+                var product = Products.FirstOrDefault(p => p.ProductName == order.ProductName);
+                if(product != null)
+                {
+                    order.Completed = false;
+                    order.ProductId = product.ProductID;
+
+                    var response = await Http.PostAsJsonAsync("api/Order/PostOrder", order);
+                    if(response.IsSuccessStatusCode)
+                    {
+                        await JsRuntime.InvokeVoidAsync("Alert", "Votre Commande a été envoyé !!!");
+                        navigationManager.NavigateTo("/products", forceLoad: true);
+                    }
+                    else
+                    {
+                        message = "<p>Veuillez remplire tous les champs</p><br><br>";
+                    }
+                }
+            }
+        }        
+    }
+}

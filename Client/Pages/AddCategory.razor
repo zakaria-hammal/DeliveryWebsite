@@ -1,0 +1,36 @@
+@page "/categories/addcategory"
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@attribute [Authorize]
+
+<label>Nom de la categorie :</label><br>
+<input type="text" placeholder="Categorie" @bind="@category.CategoryName" required><br><br>
+@((MarkupString)message)
+
+<button class="btn btn-primary" @onclick="@RegisterCategory">Ajouter</button>
+
+@code {
+    private string message{get; set;} = String.Empty;
+    private Category? category{get; set;} = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+    }
+
+    private async Task RegisterCategory()
+    {
+        var response = await Http.PostAsJsonAsync("api/Stock/PostCategory", category);
+        if(response.IsSuccessStatusCode)
+        {
+            navigationManager.NavigateTo("/categoris", forceLoad:true);
+        }
+        else
+        {
+            message = "<p>Veuillez remplire tous les champs</p><br><br>";
+        }
+    }
+}

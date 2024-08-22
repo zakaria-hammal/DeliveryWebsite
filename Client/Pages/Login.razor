@@ -1,0 +1,68 @@
+@page "/admin/login"
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager navigationManager
+@inject ILocalStorageService localStorage
+
+<PageTitle>Login</PageTitle>
+
+@if(loginUserModel == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <CascadingAuthenticationState>
+        <AuthorizeView>
+            <NotAuthorized>
+                <label>Nom d'utilisateur :</label><br>
+                <input type="text" @bind="@loginUserModel.Username" placeholder="Nom d'utilisateur" required><br><br>
+
+                <label>Mot de passe :</label><br>
+                <input type="password" @bind="@loginUserModel.Password" placeholder="Mot de passe" required><br><br>
+                @((MarkupString)message)
+
+                <button class="btn btn-primary" @onclick="@LoginAsync">Se Connecter</button>
+            </NotAuthorized>
+            <Authorized>
+                Vous êtes déjà connecté(e)
+            </Authorized>
+        </AuthorizeView>
+    </CascadingAuthenticationState>
+}
+
+@code {
+    private string message{get; set;} = String.Empty;
+    private LoginUserModel? loginUserModel{get; set;} = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+    }
+
+    private async Task LoginAsync()
+    {
+        if(loginUserModel != null)
+        {
+            var response = await Http.PostAsJsonAsync("api/Admin/Login", loginUserModel);
+            if(response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                json = json.ToString();
+
+                await localStorage.SetItemAsync<string>("Token", json);
+                    
+                await AuthStateProvider.GetAuthenticationStateAsync();
+
+                navigationManager.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                message = "<p>Nom d'utilisateur ou mot de passe incorrect(s)</p><br><br>";
+            }
+
+        }
+    }
+}

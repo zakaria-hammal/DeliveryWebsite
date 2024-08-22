@@ -1,0 +1,110 @@
+﻿@page "/products"
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Nos Produits</PageTitle>
+
+<h1>Nos Produits</h1>
+
+@if (Products == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <CascadingAuthenticationState>
+        <AuthorizeView>
+            <Authorized>
+                <button class="btn btn-primary" @onclick="Add">Ajouter un produit</button><br><br>
+            </Authorized>
+        </AuthorizeView>
+    </CascadingAuthenticationState>
+    <label>Produit :       </label>
+    <input type="text" placeholder="Product Name" @bind-value="@product" @bind-value:event="oninput">
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Prix(DA)</th>
+                <th>Categorie</th>
+                <th>Détails</th>
+                <CascadingAuthenticationState>
+                    <AuthorizeView>
+                        <Authorized>
+                            <th>Supprimer</th>
+                        </Authorized>
+                    </AuthorizeView>
+                </CascadingAuthenticationState>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Products)
+            {
+                <tr>
+                    <td>@product.ProductName</td>
+                    <td>@product.Price</td>
+                    <td>@product.CategoryName</td>
+                    @if(product.ProductName != null)
+                    {
+                        <td><button class="btn btn-primary" @onclick="() => Nav(product.ProductName)">Détails</button></td>
+                    }
+                    <CascadingAuthenticationState>
+                    <AuthorizeView>
+                        <Authorized>
+                            <td><button class="btn btn-primary" @onclick="@(async () => await DeleteProductAsync(product.ProductID))">Supprimer</button></td>
+                        </Authorized>
+                    </AuthorizeView>
+                </CascadingAuthenticationState>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Product>? products{get; set;} = new();
+    private string? product{get; set;} = String.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var response = await Http.GetAsync("api/Stock/GetProducts");
+
+        if(response.IsSuccessStatusCode)
+        {
+            products = await Http.GetFromJsonAsync<List<Product>>("api/Stock/GetProducts");
+        }
+    }
+    private List<Product>? Products => products.Where(p => p.ProductName.ToLower().StartsWith(product.ToLower())).ToList();
+
+    private void Nav(string product)
+    {
+        navigationManager.NavigateTo($"/products/{product}", forceLoad: true);
+    }
+
+    private void Add()
+    {
+        navigationManager.NavigateTo("/products/addproduct", forceLoad: true);
+    }
+
+    private async Task DeleteProductAsync(int ProductID)
+    {
+        var response = await Http.DeleteAsync($"/api/Stock/DeleteProduct/{ProductID}");
+
+        if(response.IsSuccessStatusCode)
+        {
+            var prod = products.FirstOrDefault(p => p.ProductID == ProductID);
+
+            if(prod != null)
+            {
+                products.Remove(prod);
+            }
+        }
+    }
+
+}

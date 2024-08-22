@@ -1,0 +1,84 @@
+@page "/categories"
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@attribute [Authorize]
+
+<PageTitle>Les Categories</PageTitle>
+
+<h1>Les Categories</h1>
+
+@if (Categories == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else
+{
+    <CascadingAuthenticationState>
+        <AuthorizeView>
+            <Authorized>
+                <button class="btn btn-primary" @onclick="Add">Ajouter une categorie</button><br><br>
+            </Authorized>
+        </AuthorizeView>
+    </CascadingAuthenticationState>
+    <label>Categorie :       </label>
+    <input type="text" placeholder="Product Name" @bind-value="@category" @bind-value:event="oninput">
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Categorie</th>                
+                <th>Supprimer</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in Categories)
+            {
+                <tr>
+                    <td>@category.CategoryName</td>
+                    <td><button class="btn btn-primary" @onclick="@(async () => await DeleteCategoryAsync(category.CategoryID))">Supprimer</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Category>? categories{get; set;} = new();
+    private string? category{get; set;} = String.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var response = await Http.GetAsync("api/Stock/GetCategories");
+
+        if(response.IsSuccessStatusCode)
+        {
+            categories = await Http.GetFromJsonAsync<List<Category>>("api/Stock/GetCategories");
+        }
+    }
+    private List<Category>? Categories => categories.Where(p => p.CategoryName.ToLower().StartsWith(category.ToLower())).ToList();
+
+    private void Add()
+    {
+        navigationManager.NavigateTo("/categories/addcategory", forceLoad: true);
+    }
+    private async Task DeleteCategoryAsync(int CategoryID)
+    {
+        var response = await Http.DeleteAsync($"api/Stock/DeleteCategory/{CategoryID}");
+
+        if(response.IsSuccessStatusCode)
+        {
+            var cat = Categories.FirstOrDefault(c => c.CategoryID == CategoryID);
+
+            if(cat != null)
+            {
+                categories.Remove(cat);
+            }
+        }
+    }
+
+}

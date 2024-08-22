@@ -1,0 +1,45 @@
+@page "/feedbacks"
+@inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Http
+@attribute [Authorize]
+
+<PageTitle>List De Commandes</PageTitle>
+
+@if(feedbacks == null)
+{
+    <p><em>Chargement...</em></p>
+}
+else if(feedbacks.Count == 0)
+{
+    <p>Pas de signals</p>
+}
+else
+{
+    foreach(var feedback in feedbacks)
+    {
+        <p><strong>Client :</strong>@feedback.ClientLastName @feedback.ClientFirstName</p>
+        <p><strong>Email :</strong>@feedback.ClientEmail</p>
+        <p><strong>Numéro de téléphone :</strong>@feedback.ClientPhoneNumber</p>
+        <p><strong>Le Problème :</strong>@feedback.Problem</p>
+
+        <hr>
+    }
+}
+
+@code {
+    private List<Feedback>? feedbacks{get; set;}
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        feedbacks = new();
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var response = await Http.GetAsync("api/Feedback/GetFeedbacks");
+
+        if(response.IsSuccessStatusCode)
+        {
+            feedbacks = await Http.GetFromJsonAsync<List<Feedback>>("api/Feedback/GetFeedbacks");
+        }
+    }
+}
