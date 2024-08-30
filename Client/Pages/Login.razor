@@ -52,6 +52,13 @@ else
                 var json = await response.Content.ReadAsStringAsync();
                 json = json.ToString();
 
+                var token = "";
+
+                for(int i = 1; i < json.Length - 1 ; i++)
+                {
+                    token = token + json[i].ToString();
+                }
+
                 await localStorage.SetItemAsync<string>("Token", json);
                     
                 await AuthStateProvider.GetAuthenticationStateAsync();
