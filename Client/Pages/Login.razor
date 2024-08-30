@@ -59,7 +59,7 @@ else
                     token = token + json[i].ToString();
                 }
 
-                await localStorage.SetItemAsync<string>("Token", json);
+                await localStorage.SetItemAsync<string>("Token", token);
                     
                 await AuthStateProvider.GetAuthenticationStateAsync();
 
