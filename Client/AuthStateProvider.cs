@@ -23,10 +23,8 @@ namespace Client
         {
             _http.DefaultRequestHeaders.Accept.Clear();
             _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-
-            string jwtToken = await _localStorageService.GetItemAsync<string>("Token");
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            
+            string? jwtToken = await _localStorageService.GetItemAsync<string>("Token");
 
             var identity = new ClaimsIdentity();
 
