@@ -26,7 +26,7 @@
         var response = await Http.PostAsJsonAsync("api/Stock/PostCategory", category);
         if(response.IsSuccessStatusCode)
         {
-            navigationManager.NavigateTo("/categoris", forceLoad:true);
+            navigationManager.NavigateTo("/categories", forceLoad:true);
         }
         else
         {
