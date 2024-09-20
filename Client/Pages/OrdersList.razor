@@ -16,7 +16,7 @@ else if(Orders.Count == 0)
 }
 else
 {
-    <input type="checkbox" @bind="finished">@:&emsp;<label>Afficher Seulement les commandes non dévlivrés</label>
+    <input type="checkbox" @bind="finished">@:&emsp;<label>Afficher Seulement les commandes non dévlivrés</label><br><br>
     foreach(var order in Orders)
     {
         <p><strong>Client :</strong>@order.ClientLastName @order.ClientFirstName</p>
@@ -27,11 +27,11 @@ else
         <p><strong>Commentaires :</strong>@order.Comments</p>
         if(order.Completed)
         {
-            <p><strong>Etat :</strong>Dévlivré</p>
+            <p><strong>Etat :</strong>Délivré</p>
         }
         else
         {
-            <p><strong>Etat :</strong>Non Dévlivré</p>
+            <p><strong>Etat :</strong>Non Délivré</p>
         }
         if(!order.Completed)
         {
